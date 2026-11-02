@@ -1,5 +1,7 @@
 # Dispenser Fleet Lab
 
+[![CI](https://github.com/SaraEwaida/dispenser-fleet-lab/actions/workflows/ci.yml/badge.svg)](https://github.com/SaraEwaida/dispenser-fleet-lab/actions/workflows/ci.yml)
+
 A simulated fleet of connected medication dispensers, the cloud service that watches them, and the support console a care team and an L1 support engineer would use. Built as a QA and L1 support portfolio project.
 
 Twenty-four virtual dispensers talk to the backend over real MQTT. They send heartbeats, dose reminders, button presses and dispense failures, and they misbehave the way field devices do: they drop offline and replay buffered events, send duplicates, corrupt payloads and drift their clocks. The backend has to turn that stream into correct alerts, and the tests prove it does.
@@ -145,6 +147,8 @@ npm run dev        # http://localhost:5173, proxies /api to :8100
 | API (Postman / Newman) | 39 requests, 120 assertions | `npx newman run postman/Dispenser-Fleet-Lab.postman_collection.json -e postman/local.postman_environment.json` |
 
 Backend tests need an empty database: `createdb fleet_test` (or set `TEST_DATABASE_URL`). Playwright expects the app on `http://localhost:8100` (override with `E2E_BASE_URL`). For Newman, set `baseUrl` in the environment file or pass `--env-var baseUrl=...`.
+
+All four suites run on every push in GitHub Actions (`.github/workflows/ci.yml`); reports are uploaded as build artifacts.
 
 Test names carry their test case ID (`test_tc016_...`, `[TC-044]`). See:
 
