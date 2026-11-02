@@ -38,6 +38,7 @@ class Settings(BaseSettings):
     command_expiry_minutes: int = 60
 
     engine_tick_seconds: float = 2.0    # real seconds between escalation passes
+    telemetry_keep_rows: int = 100_000  # message log retention; older rows are pruned (free-tier storage)
 
     cors_origins: str = "http://localhost:5173"
     frontend_dist: str = ""

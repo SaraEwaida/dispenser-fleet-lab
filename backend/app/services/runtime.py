@@ -6,14 +6,14 @@ import logging
 from datetime import timedelta
 
 import aiomqtt
-from sqlalchemy import select, update
+from sqlalchemy import delete, func, select, update
 from starlette.concurrency import run_in_threadpool
 
 from app.core.clock import get_clock
 from app.core.config import get_settings
 from app.core.protocol import EVENTS_SUB, commands_topic
 from app.db.session import SessionLocal
-from app.models import Command, CommandStatus, Device, DeviceStatus
+from app.models import Command, CommandStatus, Device, DeviceStatus, Telemetry
 from app.services.escalation import run_pass
 from app.services.ingestion import process_raw
 
@@ -27,7 +27,7 @@ class Runtime:
         self.broker = None
         self.tasks: list[asyncio.Task] = []
         self.lock = asyncio.Lock()   # serialises background DB writers so ingestion and escalation never race
-        self.stats = {"received": 0, "errors": 0, "engine_passes": 0, "commands_sent": 0}
+        self.stats = {"received": 0, "errors": 0, "engine_passes": 0, "commands_sent": 0, "telemetry_pruned": 0}
         self.publisher: aiomqtt.Client | None = None
 
     # ---------- broker ----------
@@ -88,10 +88,23 @@ class Runtime:
                 db.rollback()
                 log.exception("escalation pass failed")
 
+    def _prune_telemetry(self) -> int:
+        """Keep the newest N message-log rows. Nothing references telemetry rows, so pruning is safe."""
+        keep = get_settings().telemetry_keep_rows
+        with SessionLocal() as db:
+            top = db.scalar(select(func.max(Telemetry.id)))
+            if not top or top <= keep:
+                return 0
+            n = db.execute(delete(Telemetry).where(Telemetry.id <= top - keep)).rowcount
+            db.commit()
+            return n
+
     async def _engine_loop(self) -> None:
         while True:
             async with self.lock:
                 await run_in_threadpool(self._engine_pass)
+                if self.stats["engine_passes"] % 150 == 0:  # about every 5 minutes
+                    self.stats["telemetry_pruned"] += await run_in_threadpool(self._prune_telemetry)
             self.stats["engine_passes"] += 1
             await asyncio.sleep(get_settings().engine_tick_seconds)
 

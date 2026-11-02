@@ -140,3 +140,21 @@ def test_message_log_filters(client, auth, make_device, sender):
     sender(d.serial).heartbeat(T0, msg_id="filter-0001")
     items = client.get(f"{API}/messages", params={"serial": d.serial, "status": "duplicate"}, headers=auth("qa")).json()["items"]
     assert len(items) == 1 and items[0]["error"] == "msg_id already processed"
+
+
+def test_message_log_retention_keeps_newest_rows(db, make_device, sender, monkeypatch):
+    from app.core.config import get_settings
+    from app.models import Telemetry
+    from app.services.runtime import Runtime
+    from sqlalchemy import func, select
+
+    d = make_device()
+    s = sender(d.serial)
+    for i in range(6):
+        s.heartbeat(T0 + timedelta(minutes=5 * i))
+    monkeypatch.setattr(get_settings(), "telemetry_keep_rows", 4)
+    top = db.scalar(select(func.max(Telemetry.id)))
+    Runtime()._prune_telemetry()
+    db.expire_all()
+    ids = db.scalars(select(Telemetry.id)).all()
+    assert len(ids) == 4 and min(ids) == top - 3
