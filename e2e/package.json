@@ -1,0 +1,12 @@
+{
+  "name": "dispenser-fleet-lab-e2e",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "report": "playwright show-report results/html"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0"
+  }
+}

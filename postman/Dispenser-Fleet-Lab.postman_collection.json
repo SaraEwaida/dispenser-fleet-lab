@@ -1,0 +1,1720 @@
+{
+  "info": {
+    "_postman_id": "ea65654e-a8ef-55ae-910e-19eff6655547",
+    "name": "Dispenser Fleet Lab API",
+    "description": "Requests and assertions for the Dispenser Fleet Lab REST API. Run the folders in order (login sets the tokens).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Auth & system",
+      "item": [
+        {
+          "name": "Health check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "health"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200\", () => pm.response.to.have.status(200));",
+                  "const b = pm.response.json();",
+                  "pm.test(\"database ok\", () => pm.expect(b.database).to.eql(\"ok\"));",
+                  "pm.test(\"has X-Request-ID header\", () => pm.response.to.have.header(\"X-Request-ID\"));",
+                  "pm.test(\"responds in under 1500 ms\", () => pm.expect(pm.response.responseTime).to.be.below(1500));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login as coordinator",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"coordinator@fleet.example.com\",\n  \"password\": \"{{demo_password}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200\", () => pm.response.to.have.status(200));",
+                  "const b = pm.response.json();",
+                  "pm.test(\"returns bearer token\", () => { pm.expect(b.token_type).to.eql(\"bearer\"); pm.expect(b.access_token).to.be.a(\"string\"); });",
+                  "pm.collectionVariables.set(\"coordinator_token\", b.access_token);",
+                  "pm.test(\"has X-Request-ID header\", () => pm.response.to.have.header(\"X-Request-ID\"));",
+                  "pm.test(\"responds in under 1500 ms\", () => pm.expect(pm.response.responseTime).to.be.below(1500));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login as support",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"support@fleet.example.com\",\n  \"password\": \"{{demo_password}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200\", () => pm.response.to.have.status(200));",
+                  "const b = pm.response.json();",
+                  "pm.test(\"returns bearer token\", () => { pm.expect(b.token_type).to.eql(\"bearer\"); pm.expect(b.access_token).to.be.a(\"string\"); });",
+                  "pm.collectionVariables.set(\"support_token\", b.access_token);",
+                  "pm.test(\"has X-Request-ID header\", () => pm.response.to.have.header(\"X-Request-ID\"));",
+                  "pm.test(\"responds in under 1500 ms\", () => pm.expect(pm.response.responseTime).to.be.below(1500));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login as qa",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"qa@fleet.example.com\",\n  \"password\": \"{{demo_password}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200\", () => pm.response.to.have.status(200));",
+                  "const b = pm.response.json();",
+                  "pm.test(\"returns bearer token\", () => { pm.expect(b.token_type).to.eql(\"bearer\"); pm.expect(b.access_token).to.be.a(\"string\"); });",
+                  "pm.collectionVariables.set(\"qa_token\", b.access_token);",
+                  "pm.test(\"has X-Request-ID header\", () => pm.response.to.have.header(\"X-Request-ID\"));",
+                  "pm.test(\"responds in under 1500 ms\", () => pm.expect(pm.response.responseTime).to.be.below(1500));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Wrong password \u2192 401",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"support@fleet.example.com\",\n  \"password\": \"wrong\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"401\", () => pm.response.to.have.status(401));",
+                  "pm.test(\"generic message\", () => pm.expect(pm.response.json().error.message).to.eql(\"Invalid email or password.\"));",
+                  "pm.test(\"error envelope with request_id\", () => { const e = pm.response.json().error; pm.expect(e).to.include.keys(\"code\",\"message\",\"request_id\"); pm.expect(e.request_id).to.eql(pm.response.headers.get(\"X-Request-ID\")); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "No token \u2192 401",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/devices",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "devices"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"401\", () => pm.response.to.have.status(401));",
+                  "pm.test(\"error envelope with request_id\", () => { const e = pm.response.json().error; pm.expect(e).to.include.keys(\"code\",\"message\",\"request_id\"); pm.expect(e.request_id).to.eql(pm.response.headers.get(\"X-Request-ID\")); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Simulated clock",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{support_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/sim",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sim"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"fleet speed reported\", () => pm.expect(pm.response.json().speed).to.be.above(0));",
+                  "pm.test(\"has X-Request-ID header\", () => pm.response.to.have.header(\"X-Request-ID\"));",
+                  "pm.test(\"responds in under 1500 ms\", () => pm.expect(pm.response.responseTime).to.be.below(1500));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. Fleet & devices",
+      "item": [
+        {
+          "name": "Fleet summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{support_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/fleet/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "fleet",
+                "summary"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200\", () => pm.response.to.have.status(200));",
+                  "const b = pm.response.json();",
+                  "pm.test(\"has devices and alerts blocks\", () => pm.expect(b).to.include.keys(\"devices\",\"alerts\",\"adherence_24h\"));",
+                  "pm.test(\"has X-Request-ID header\", () => pm.response.to.have.header(\"X-Request-ID\"));",
+                  "pm.test(\"responds in under 1500 ms\", () => pm.expect(pm.response.responseTime).to.be.below(1500));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List devices (search)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{support_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/devices?q=MD-2401&page_size=5",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "devices"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "MD-2401"
+                },
+                {
+                  "key": "page_size",
+                  "value": "5"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200\", () => pm.response.to.have.status(200));",
+                  "const b = pm.response.json();",
+                  "pm.test(\"paginated envelope\", () => pm.expect(b).to.have.keys(\"items\",\"total\",\"page\",\"page_size\"));",
+                  "pm.test(\"every serial matches\", () => b.items.forEach(d => pm.expect(d.serial).to.include(\"MD-2401\")));",
+                  "pm.test(\"has X-Request-ID header\", () => pm.response.to.have.header(\"X-Request-ID\"));",
+                  "pm.test(\"responds in under 1500 ms\", () => pm.expect(pm.response.responseTime).to.be.below(1500));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Device detail",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{support_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/devices/MD-24020",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "devices",
+                "MD-24020"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200\", () => pm.response.to.have.status(200));",
+                  "const b = pm.response.json();",
+                  "pm.test(\"serial and schedule\", () => { pm.expect(b.serial).to.eql(\"MD-24020\"); pm.expect(b.schedule).to.be.an(\"array\").that.is.not.empty; });",
+                  "pm.test(\"has X-Request-ID header\", () => pm.response.to.have.header(\"X-Request-ID\"));",
+                  "pm.test(\"responds in under 1500 ms\", () => pm.expect(pm.response.responseTime).to.be.below(1500));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Unknown device \u2192 404",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{support_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/devices/MD-99999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "devices",
+                "MD-99999"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"error envelope with request_id\", () => { const e = pm.response.json().error; pm.expect(e).to.include.keys(\"code\",\"message\",\"request_id\"); pm.expect(e.request_id).to.eql(pm.response.headers.get(\"X-Request-ID\")); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Device message log",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{support_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/devices/MD-24020/messages?page_size=5",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "devices",
+                "MD-24020",
+                "messages"
+              ],
+              "query": [
+                {
+                  "key": "page_size",
+                  "value": "5"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"messages belong to device\", () => pm.response.json().items.forEach(m => pm.expect(m.serial).to.eql(\"MD-24020\")));",
+                  "pm.test(\"has X-Request-ID header\", () => pm.response.to.have.header(\"X-Request-ID\"));",
+                  "pm.test(\"responds in under 1500 ms\", () => pm.expect(pm.response.responseTime).to.be.below(1500));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Invalid schedule time \u2192 422",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{support_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/devices/MD-24020/schedule",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "devices",
+                "MD-24020",
+                "schedule"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"times\": [\n    \"08:00\",\n    \"25:00\"\n  ]\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"422\", () => pm.response.to.have.status(422));",
+                  "pm.test(\"error envelope with request_id\", () => { const e = pm.response.json().error; pm.expect(e).to.include.keys(\"code\",\"message\",\"request_id\"); pm.expect(e.request_id).to.eql(pm.response.headers.get(\"X-Request-ID\")); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Coordinator cannot send commands \u2192 403",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coordinator_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/devices/MD-24020/commands",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "devices",
+                "MD-24020",
+                "commands"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"reboot\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"403\", () => pm.response.to.have.status(403));",
+                  "pm.test(\"error envelope with request_id\", () => { const e = pm.response.json().error; pm.expect(e).to.include.keys(\"code\",\"message\",\"request_id\"); pm.expect(e.request_id).to.eql(pm.response.headers.get(\"X-Request-ID\")); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Unknown command type \u2192 422",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{support_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/devices/MD-24020/commands",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "devices",
+                "MD-24020",
+                "commands"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"self_destruct\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"422\", () => pm.response.to.have.status(422));",
+                  "pm.test(\"error envelope with request_id\", () => { const e = pm.response.json().error; pm.expect(e).to.include.keys(\"code\",\"message\",\"request_id\"); pm.expect(e.request_id).to.eql(pm.response.headers.get(\"X-Request-ID\")); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Send resync_clock",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{support_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/devices/MD-24020/commands",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "devices",
+                "MD-24020",
+                "commands"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"resync_clock\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"201 or 409 if one is already pending\", () => pm.expect(pm.response.code).to.be.oneOf([201, 409]));",
+                  "pm.test(\"has X-Request-ID header\", () => pm.response.to.have.header(\"X-Request-ID\"));",
+                  "pm.test(\"responds in under 1500 ms\", () => pm.expect(pm.response.responseTime).to.be.below(1500));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3. Fault Lab",
+      "item": [
+        {
+          "name": "Fault catalog",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{qa_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/faults",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "faults"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"7 fault types\", () => pm.expect(pm.response.json().catalog.length).to.eql(7));",
+                  "pm.test(\"has X-Request-ID header\", () => pm.response.to.have.header(\"X-Request-ID\"));",
+                  "pm.test(\"responds in under 1500 ms\", () => pm.expect(pm.response.responseTime).to.be.below(1500));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Clear all faults",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{qa_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/faults",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "faults"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"has X-Request-ID header\", () => pm.response.to.have.header(\"X-Request-ID\"));",
+                  "pm.test(\"responds in under 1500 ms\", () => pm.expect(pm.response.responseTime).to.be.below(1500));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Support cannot inject faults \u2192 403",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{support_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/devices/MD-24021/faults",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "devices",
+                "MD-24021",
+                "faults"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"battery_drain\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"403\", () => pm.response.to.have.status(403));",
+                  "pm.test(\"error envelope with request_id\", () => { const e = pm.response.json().error; pm.expect(e).to.include.keys(\"code\",\"message\",\"request_id\"); pm.expect(e.request_id).to.eql(pm.response.headers.get(\"X-Request-ID\")); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Inject battery_drain",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{qa_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/devices/MD-24021/faults",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "devices",
+                "MD-24021",
+                "faults"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"battery_drain\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"describes the fault\", () => pm.expect(pm.response.json().description).to.be.a(\"string\"));",
+                  "pm.test(\"has X-Request-ID header\", () => pm.response.to.have.header(\"X-Request-ID\"));",
+                  "pm.test(\"responds in under 1500 ms\", () => pm.expect(pm.response.responseTime).to.be.below(1500));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Same fault twice \u2192 409",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{qa_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/devices/MD-24021/faults",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "devices",
+                "MD-24021",
+                "faults"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"battery_drain\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"409\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"FAULT_ACTIVE\", () => pm.expect(pm.response.json().error.code).to.eql(\"FAULT_ACTIVE\"));",
+                  "pm.test(\"error envelope with request_id\", () => { const e = pm.response.json().error; pm.expect(e).to.include.keys(\"code\",\"message\",\"request_id\"); pm.expect(e.request_id).to.eql(pm.response.headers.get(\"X-Request-ID\")); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Unknown fault type \u2192 422",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{qa_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/devices/MD-24021/faults",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "devices",
+                "MD-24021",
+                "faults"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"meltdown\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"422\", () => pm.response.to.have.status(422));",
+                  "pm.test(\"error envelope with request_id\", () => { const e = pm.response.json().error; pm.expect(e).to.include.keys(\"code\",\"message\",\"request_id\"); pm.expect(e.request_id).to.eql(pm.response.headers.get(\"X-Request-ID\")); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Clear battery_drain",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{qa_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/devices/MD-24021/faults/battery_drain",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "devices",
+                "MD-24021",
+                "faults",
+                "battery_drain"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"204\", () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Clear it again \u2192 404",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{qa_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/devices/MD-24021/faults/battery_drain",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "devices",
+                "MD-24021",
+                "faults",
+                "battery_drain"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"error envelope with request_id\", () => { const e = pm.response.json().error; pm.expect(e).to.include.keys(\"code\",\"message\",\"request_id\"); pm.expect(e.request_id).to.eql(pm.response.headers.get(\"X-Request-ID\")); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "4. Alerts & telemetry",
+      "item": [
+        {
+          "name": "Open alerts",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{support_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/alerts?status=open&page_size=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "alerts"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "open"
+                },
+                {
+                  "key": "page_size",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"only open alerts\", () => pm.response.json().items.forEach(a => pm.expect(a.status).to.eql(\"open\")));",
+                  "pm.test(\"has X-Request-ID header\", () => pm.response.to.have.header(\"X-Request-ID\"));",
+                  "pm.test(\"responds in under 1500 ms\", () => pm.expect(pm.response.responseTime).to.be.below(1500));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Resolve unknown alert \u2192 404",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{support_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/alerts/999999/resolve",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "alerts",
+                "999999",
+                "resolve"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resolution\": \"Checked with caregiver.\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"error envelope with request_id\", () => { const e = pm.response.json().error; pm.expect(e).to.include.keys(\"code\",\"message\",\"request_id\"); pm.expect(e.request_id).to.eql(pm.response.headers.get(\"X-Request-ID\")); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Rejected messages (invalid)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{support_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/messages?status=invalid&page_size=5",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "messages"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "invalid"
+                },
+                {
+                  "key": "page_size",
+                  "value": "5"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"each carries an error\", () => pm.response.json().items.forEach(m => pm.expect(m.error).to.be.a(\"string\")));",
+                  "pm.test(\"has X-Request-ID header\", () => pm.response.to.have.header(\"X-Request-ID\"));",
+                  "pm.test(\"responds in under 1500 ms\", () => pm.expect(pm.response.responseTime).to.be.below(1500));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Duplicate messages",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{support_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/messages?status=duplicate&page_size=5",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "messages"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "duplicate"
+                },
+                {
+                  "key": "page_size",
+                  "value": "5"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"has X-Request-ID header\", () => pm.response.to.have.header(\"X-Request-ID\"));",
+                  "pm.test(\"responds in under 1500 ms\", () => pm.expect(pm.response.responseTime).to.be.below(1500));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Coordinator cannot read raw telemetry \u2192 403",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coordinator_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/messages",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "messages"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"403\", () => pm.response.to.have.status(403));",
+                  "pm.test(\"error envelope with request_id\", () => { const e = pm.response.json().error; pm.expect(e).to.include.keys(\"code\",\"message\",\"request_id\"); pm.expect(e.request_id).to.eql(pm.response.headers.get(\"X-Request-ID\")); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Audit log",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{support_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/audit?page_size=5",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "audit"
+              ],
+              "query": [
+                {
+                  "key": "page_size",
+                  "value": "5"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"has X-Request-ID header\", () => pm.response.to.have.header(\"X-Request-ID\"));",
+                  "pm.test(\"responds in under 1500 ms\", () => pm.expect(pm.response.responseTime).to.be.below(1500));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "5. Support tickets",
+      "item": [
+        {
+          "name": "Ticket validation \u2192 422",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{support_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tickets",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tickets"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subject\": \"Hi\",\n  \"description\": \"short\",\n  \"reporter\": \"C\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"422\", () => pm.response.to.have.status(422));",
+                  "const f = pm.response.json().error.details.map(d => d.field);",
+                  "pm.test(\"lists subject and description\", () => { pm.expect(f).to.include(\"subject\"); pm.expect(f).to.include(\"description\"); });",
+                  "pm.test(\"error envelope with request_id\", () => { const e = pm.response.json().error; pm.expect(e).to.include.keys(\"code\",\"message\",\"request_id\"); pm.expect(e.request_id).to.eql(pm.response.headers.get(\"X-Request-ID\")); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Unknown device on ticket \u2192 422",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{support_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tickets",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tickets"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subject\": \"Dispenser silent\",\n  \"description\": \"No reminders since this morning.\",\n  \"reporter\": \"Caregiver\",\n  \"device_serial\": \"MD-99999\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"422\", () => pm.response.to.have.status(422));",
+                  "pm.test(\"error envelope with request_id\", () => { const e = pm.response.json().error; pm.expect(e).to.include.keys(\"code\",\"message\",\"request_id\"); pm.expect(e.request_id).to.eql(pm.response.headers.get(\"X-Request-ID\")); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create ticket",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{support_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tickets",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tickets"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subject\": \"Dispenser silent since morning\",\n  \"description\": \"Caregiver reports no reminder at 08:00 or 13:00.\",\n  \"reporter\": \"Caregiver (Postman)\",\n  \"priority\": \"high\",\n  \"device_serial\": \"MD-24022\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"201\", () => pm.response.to.have.status(201));",
+                  "const b = pm.response.json();",
+                  "pm.test(\"ticket code format\", () => pm.expect(b.code).to.match(/^SUP-\\d+$/));",
+                  "pm.test(\"starts open\", () => pm.expect(b.status).to.eql(\"open\"));",
+                  "pm.collectionVariables.set(\"ticket_id\", b.id);",
+                  "pm.test(\"has X-Request-ID header\", () => pm.response.to.have.header(\"X-Request-ID\"));",
+                  "pm.test(\"responds in under 1500 ms\", () => pm.expect(pm.response.responseTime).to.be.below(1500));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Invalid transition open \u2192 open \u2192 409",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{support_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tickets/{{ticket_id}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tickets",
+                "{{ticket_id}}",
+                "status"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"open\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"409\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"INVALID_TRANSITION\", () => pm.expect(pm.response.json().error.code).to.eql(\"INVALID_TRANSITION\"));",
+                  "pm.test(\"error envelope with request_id\", () => { const e = pm.response.json().error; pm.expect(e).to.include.keys(\"code\",\"message\",\"request_id\"); pm.expect(e.request_id).to.eql(pm.response.headers.get(\"X-Request-ID\")); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Start investigating",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{support_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tickets/{{ticket_id}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tickets",
+                "{{ticket_id}}",
+                "status"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"investigating\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"has X-Request-ID header\", () => pm.response.to.have.header(\"X-Request-ID\"));",
+                  "pm.test(\"responds in under 1500 ms\", () => pm.expect(pm.response.responseTime).to.be.below(1500));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Add investigation note",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{support_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tickets/{{ticket_id}}/notes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tickets",
+                "{{ticket_id}}",
+                "notes"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"body\": \"Message log shows no heartbeats since 07:40. Device offline.\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"note stored\", () => pm.expect(pm.response.json().notes.length).to.eql(1));",
+                  "pm.test(\"has X-Request-ID header\", () => pm.response.to.have.header(\"X-Request-ID\"));",
+                  "pm.test(\"responds in under 1500 ms\", () => pm.expect(pm.response.responseTime).to.be.below(1500));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Resolve without resolution \u2192 422",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{support_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tickets/{{ticket_id}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tickets",
+                "{{ticket_id}}",
+                "status"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"resolved\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"422\", () => pm.response.to.have.status(422));",
+                  "pm.test(\"error envelope with request_id\", () => { const e = pm.response.json().error; pm.expect(e).to.include.keys(\"code\",\"message\",\"request_id\"); pm.expect(e.request_id).to.eql(pm.response.headers.get(\"X-Request-ID\")); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Resolve",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{support_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tickets/{{ticket_id}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tickets",
+                "{{ticket_id}}",
+                "status"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"resolved\",\n  \"resolution\": \"Router was off. Caregiver restarted it; device reconnected and buffered events arrived.\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"resolution saved\", () => pm.expect(pm.response.json().resolution).to.include(\"Router\"));",
+                  "pm.test(\"has X-Request-ID header\", () => pm.response.to.have.header(\"X-Request-ID\"));",
+                  "pm.test(\"responds in under 1500 ms\", () => pm.expect(pm.response.responseTime).to.be.below(1500));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "QA cannot manage tickets \u2192 403",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{qa_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tickets/{{ticket_id}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tickets",
+                "{{ticket_id}}",
+                "status"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"investigating\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"403\", () => pm.response.to.have.status(403));",
+                  "pm.test(\"error envelope with request_id\", () => { const e = pm.response.json().error; pm.expect(e).to.include.keys(\"code\",\"message\",\"request_id\"); pm.expect(e.request_id).to.eql(pm.response.headers.get(\"X-Request-ID\")); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "coordinator_token",
+      "value": ""
+    },
+    {
+      "key": "support_token",
+      "value": ""
+    },
+    {
+      "key": "qa_token",
+      "value": ""
+    },
+    {
+      "key": "ticket_id",
+      "value": ""
+    }
+  ]
+}
