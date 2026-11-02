@@ -1,0 +1,69 @@
+@import "@fontsource/ibm-plex-sans/400.css";
+@import "@fontsource/ibm-plex-sans/500.css";
+@import "@fontsource/ibm-plex-sans/600.css";
+@import "@fontsource/ibm-plex-mono/400.css";
+@import "@fontsource/ibm-plex-mono/500.css";
+@import "tailwindcss";
+
+/*
+  Dispenser Fleet Console tokens: an operations console, so cooler and more technical than MediCare QA Lab.
+  ink    #101b2e   navy-black text
+  canvas #f2f4f8   cool grey background
+  slab   #0f1b33   sidebar
+  brand  #2457c5   signal blue (actions, focus)
+  Status colours (ok / warn / bad / info) always ship with a text label.
+  Mono (IBM Plex Mono) is used only for machine identifiers: serials, msg IDs, payloads, request IDs.
+*/
+@theme {
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  --color-ink: #101b2e;
+  --color-ink-2: #46546b;
+  --color-ink-3: #6b7890;
+  --color-canvas: #f2f4f8;
+  --color-card: #ffffff;
+  --color-line: #e1e6ef;
+  --color-line-strong: #c7cfdc;
+  --color-slab: #0f1b33;
+  --color-slab-2: #1b2b4b;
+
+  --color-brand-50: #eef3fd;
+  --color-brand-100: #d9e4fb;
+  --color-brand-600: #2457c5;
+  --color-brand-700: #1b469f;
+  --color-sky-600: #1d5fd1;
+  --color-sky-700: #174ea9;
+
+  --color-ok-50: #e8f5ee;
+  --color-ok-600: #1f8a55;
+  --color-ok-700: #1a7347;
+  --color-warn-50: #fdf3e1;
+  --color-warn-600: #c27c0e;
+  --color-warn-700: #8a5600;
+  --color-bad-50: #fdecec;
+  --color-bad-600: #cf3434;
+  --color-bad-700: #b02525;
+  --color-info-50: #edf3fc;
+  --color-info-700: #1d4f9c;
+
+  --radius-card: 10px;
+  --shadow-card: 0 1px 2px rgb(16 27 46 / 0.06);
+  --shadow-pop: 0 12px 32px -8px rgb(16 27 46 / 0.25);
+}
+
+@layer base {
+  body { @apply bg-canvas text-ink font-sans antialiased; font-size: 14px; line-height: 1.5; font-feature-settings: "tnum" 1; }
+  h1, h2, h3 { @apply text-ink; letter-spacing: -0.005em; }
+  :focus-visible { outline: 2px solid var(--color-brand-600); outline-offset: 2px; border-radius: 4px; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
+}
+
+@layer components {
+  .card { @apply bg-card border border-line rounded-[var(--radius-card)] shadow-[var(--shadow-card)]; }
+  .mono { @apply font-mono text-[12.5px] tracking-tight; }
+  .link { @apply text-sky-700 hover:underline underline-offset-2; }
+  .skeleton { @apply animate-pulse rounded bg-line/70; }
+}
