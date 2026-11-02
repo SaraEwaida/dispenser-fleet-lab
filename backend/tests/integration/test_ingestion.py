@@ -68,6 +68,23 @@ def test_tc005_out_of_order_messages_are_flagged_but_applied(db, make_device, se
     assert d.last_seq == 10  # the high-water mark never goes backwards
 
 
+def test_tc033_boot_starts_a_new_sequence(db, make_device, sender):
+    """BUG-003 regression: after a power cycle seq restarts at 1; that must not flag every message out of order."""
+    d = make_device()
+    s = sender(d.serial)
+    s.heartbeat(T0, seq=40)
+    boot = s("boot", {"firmware": "2.4.1", "boot_count": 2}, at=T0 + timedelta(minutes=1), seq=1)
+    after = s.heartbeat(T0 + timedelta(minutes=6), seq=2)
+    assert not boot.out_of_order and not after.out_of_order
+    db.refresh(d)
+    assert d.last_seq == 2
+    # A buffered boot replayed after reconnect is history, not a new power-on.
+    s.heartbeat(T0 + timedelta(minutes=11), seq=3)
+    replay = s("boot", {"firmware": "2.4.1", "boot_count": 2}, at=T0, seq=1, buffered=True)
+    db.refresh(d)
+    assert replay.out_of_order and d.last_seq == 3
+
+
 def test_tc006_buffered_heartbeat_does_not_trigger_clock_drift(db, make_device, sender):
     d = make_device()
     s = sender(d.serial)

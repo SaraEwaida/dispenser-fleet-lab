@@ -59,14 +59,16 @@ def process_raw(db: Session, topic: str, raw: bytes, now: datetime) -> Telemetry
         db.add(t)
         return t
 
-    out_of_order = msg.seq <= device.last_seq
+    # The sequence counter restarts at 1 on every power-on, so a live boot message opens a new sequence (BUG-003).
+    new_sequence = isinstance(msg, Boot) and not msg.buffered
+    out_of_order = not new_sequence and msg.seq <= device.last_seq
     t = Telemetry(**base, device_id=device.id, status=TelemetryStatus.accepted, out_of_order=out_of_order)
     db.add(t)
     db.flush()
 
     # Any accepted message proves the device is connected now.
     device.last_seen_at = now
-    device.last_seq = max(device.last_seq, msg.seq)
+    device.last_seq = msg.seq if new_sequence else max(device.last_seq, msg.seq)
     if device.status != DeviceStatus.online:
         device.status = DeviceStatus.online
         resolve_condition(db, device.id, AlertType.device_offline, now, "Device reconnected; messages received again.")
