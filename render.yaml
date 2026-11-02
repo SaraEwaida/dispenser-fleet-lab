@@ -1,0 +1,23 @@
+# Render Blueprint: one free web service (console, API, MQTT broker and simulated fleet).
+# The database is external (Neon free tier) because Render's free PostgreSQL expires after 30 days.
+# Free services sleep after 15 idle minutes; the fleet resumes cleanly on the next visit.
+services:
+  - type: web
+    name: dispenser-fleet-lab
+    runtime: docker
+    plan: free
+    region: frankfurt # same region as the Neon database
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/v1/health
+    autoDeploy: true
+    envVars:
+      - key: DATABASE_URL
+        sync: false # paste the Neon connection string in the Render dashboard
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ENVIRONMENT
+        value: demo
+      - key: SIMULATOR_ENABLED
+        value: "true"
+      - key: CORS_ORIGINS
+        value: ""
