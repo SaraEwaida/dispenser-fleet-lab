@@ -3,8 +3,8 @@
 The cloud never relies on a device to report its own failure: a device that is offline cannot say so, and a
 client who ignores the reminder produces no message at all. So the engine works from the schedule:
   1. materialise expected doses from each device's schedule (in the client's timezone);
-  2. pending doses with no confirmation after the grace period -> missed + alert;
-  3. devices silent longer than the offline threshold -> offline + alert;
+  2. devices silent longer than the offline threshold -> offline + alert;
+  3. pending doses with no confirmation after the grace period -> missed + alert;
   4. commands that could not be delivered in time -> expired.
 """
 
@@ -53,7 +53,17 @@ def run_pass(db: Session, now: datetime) -> dict:
                              .on_conflict_do_nothing(constraint="uq_dose_per_slot"))
             stats["doses_created"] += res.rowcount or 0
 
-    # 2. Missed doses.
+    # 2. Offline devices first, so a missed-dose alert raised in the same pass knows the device is offline.
+    silent_since = now - timedelta(minutes=s.offline_after_minutes)
+    for d in devices:
+        if d.status == DeviceStatus.online and d.last_seen_at and d.last_seen_at < silent_since:
+            d.status = DeviceStatus.offline
+            mins = int((now - d.last_seen_at).total_seconds() // 60)
+            raise_alert(db, d, AlertType.device_offline, f"No messages for {mins} min (heartbeat every "
+                        f"{s.heartbeat_interval_minutes} min).", now)
+            stats["offline"] += 1
+
+    # 3. Missed doses.
     deadline = now - timedelta(minutes=s.dose_grace_minutes)
     by_id = {d.id: d for d in devices}
     for dose in db.scalars(select(Dose).where(Dose.status == DoseStatus.pending, Dose.due_at <= deadline)
@@ -68,16 +78,6 @@ def run_pass(db: Session, now: datetime) -> dict:
                     f"No confirmation for the {dose.due_at.astimezone(ZoneInfo(clients[device.client_id].timezone)):%H:%M} "
                     f"dose ({s.dose_grace_minutes} min after due time).{why}", now, dose_id=dose.id)
         stats["missed"] += 1
-
-    # 3. Offline devices.
-    silent_since = now - timedelta(minutes=s.offline_after_minutes)
-    for d in devices:
-        if d.status == DeviceStatus.online and d.last_seen_at and d.last_seen_at < silent_since:
-            d.status = DeviceStatus.offline
-            mins = int((now - d.last_seen_at).total_seconds() // 60)
-            raise_alert(db, d, AlertType.device_offline, f"No messages for {mins} min (heartbeat every "
-                        f"{s.heartbeat_interval_minutes} min).", now)
-            stats["offline"] += 1
 
     # 4. Expire undeliverable commands.
     expiry = now - timedelta(minutes=s.command_expiry_minutes)
